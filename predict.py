@@ -9,16 +9,18 @@ import os
 app = FastAPI(title="Api Predict Accidents", version="1.0.0")
 
 class PredictionRequest(BaseModel):
-    weather_conditions: str
-    road_type: str
-    road_shape: str
-    light_conditions: str
-    road_surface: str
-    road_width: str
-    road_signs: str
-    road_light: str
-    road_control: str
-    weather_other: str
+    Accident_Date: str
+    Day_of_Week: str
+    Junction_Control: str
+    Junction_Detail: str
+    Light_Conditions: str
+    Number_of_Casualties: int
+    Road_Surface_Conditions: str
+    Road_Type: str
+    Speed_limit: int
+    Time: str
+    Urban_or_Rural_Area: str
+    Weather_Conditions: str
 
 class PredictionResponse(BaseModel):
     prediction: str
@@ -41,6 +43,26 @@ class AccidentPredictor:
             print("Modèle chargé avec succès")
         except Exception as e:
             print(f"Erreur chargement modèle: {e}")
+
+    def extract_features(self, input_data: dict) -> dict:
+        time_str = input_data['Time']
+        try:
+            hour = int(time_str.split(':')[0])
+        except:
+            hour = 12
+
+        date_str = input_data['Accident_Date']
+        try:
+            month = int(date_str.split('/')[1])
+        except:
+            month = 6
+
+        features = input_data.copy()
+        features['Hour'] = hour
+        features['Month'] = month
+        features['Is_Weekend'] = 1 if features['Day_of_Week'] in ['Sunday', 'Saturday'] else 0
+
+        return features
 
     def preprocess(self, input_data: dict) -> pd.DataFrame:
         df = pd.DataFrame([input_data])
