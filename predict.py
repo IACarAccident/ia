@@ -17,19 +17,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+FEATURE_ORDER = [
+    'day_of_week',
+    'junction_control',
+    'junction_detail',
+    'light_conditions',
+    'road_surface_conditions',
+    'road_type',
+    'speed_limit',
+    'urban_or_rural_area',
+    'weather_conditions'
+]
+
 class PredictionRequest(BaseModel):
-    Accident_Date: str
-    Day_of_Week: str
-    Junction_Control: str
-    Junction_Detail: str
-    Light_Conditions: str
-    Number_of_Casualties: int
-    Road_Surface_Conditions: str
-    Road_Type: str
-    Speed_limit: int
-    Time: str
-    Urban_or_Rural_Area: str
-    Weather_Conditions: str
+    day_of_week: str
+    junction_control: str
+    junction_detail: str
+    light_conditions: str
+    road_surface_conditions: str
+    road_type: str
+    speed_limit: int
+    urban_or_rural_area: str
+    weather_conditions: str
 
 class PredictionResponse(BaseModel):
     prediction: str
@@ -39,6 +48,7 @@ class PredictionResponse(BaseModel):
 class AccidentPredictor:
     def __init__(self, model_path='model/accident_model.pkl', scaler_path='model/accident_scaler.pkl'):
         self.model_loaded = False
+        self.feature_order = FEATURE_ORDER
 
         if not os.path.exists(model_path) or not os.path.exists(scaler_path):
             print('Fichiers modèle non trouvés. Mode démo activé.')
@@ -53,28 +63,9 @@ class AccidentPredictor:
         except Exception as e:
             print(f"Erreur chargement modèle: {e}")
 
-    def extract_features(self, input_data: dict) -> dict:
-        time_str = input_data['Time']
-        try:
-            hour = int(time_str.split(':')[0])
-        except:
-            hour = 12
-
-        date_str = input_data['Accident_Date']
-        try:
-            month = int(date_str.split('/')[1])
-        except:
-            month = 6
-
-        features = input_data.copy()
-        features['Hour'] = hour
-        features['Month'] = month
-        features['Is_Weekend'] = 1 if features['Day_of_Week'] in ['Sunday', 'Saturday'] else 0
-
-        return features
-
     def preprocess(self, input_data: dict) -> pd.DataFrame:
-        df = pd.DataFrame([input_data])
+        ordered_data = {feature: [input_data[feature]] for feature in self.feature_order}
+        df = pd.DataFrame(ordered_data)
 
         if self.model_loaded:
             for col, encoder in self.label_encoder.items():
@@ -104,9 +95,19 @@ class AccidentPredictor:
             probabilities = self.model.predict_proba(processed_data)[0]
             classes = self.model.classes_
 
+            class_mapping = {
+                "léger": "leger",
+                "grave": "grave",
+                "mortel": "mortel"
+            }
+
+            normalized_classes = [class_mapping.get(c, c) for c in classes]
+            probability_dict = dict(zip(normalized_classes, probabilities))
+            predicted_class = normalized_classes[np.argmax(probabilities)]
+
             return {
-                'prediction': classes[np.argmax(probabilities)],
-                'probability': dict(zip(classes, probabilities)),
+                'prediction': predicted_class,
+                'probability': probability_dict,
                 'confidence': float(np.max(probabilities))
             }
         except Exception as e:
