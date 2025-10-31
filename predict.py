@@ -4,9 +4,18 @@ import pandas as pd
 import joblib
 import numpy as np
 from typing import Dict, Any
+from fastapi.middleware.cors import CORSMiddleware
 import os
 
 app = FastAPI(title="Api Predict Accidents", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class PredictionRequest(BaseModel):
     Accident_Date: str
