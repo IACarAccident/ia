@@ -27,8 +27,8 @@ def create_model():
 
     print(f"colonnes utilisées: {list(df_clean.columns)}")
 
-    print("🔍 ORDRE DES COLONNES POUR L'ENTRAÎNEMENT:")
-    for i, col in enumerate(df_clean.columns[:-1]):  # toutes sauf la dernière (target)
+    print("ORDRE DES COLONNES POUR L'ENTRAÎNEMENT:")
+    for i, col in enumerate(df_clean.columns[:-1]):
         print(f"  {i + 1}. {col}")
     print(f"  Target: {df_clean.columns[-1]}")
 
